@@ -1,29 +1,63 @@
-# Fluent::Plugin::Notifier
+# fluent-plugin-notifier
 
-TODO: Write a gem description
+## Component
 
-## Installation
+### NotifierOutput
 
-Add this line to your application's Gemfile:
+Plugin to emit notifications for messages, with numbers over/under threshold, or specified pattern strings.
 
-    gem 'fluent-plugin-notifier'
+## Configuration
 
-And then execute:
+### NotifierOutput
 
-    $ bundle
+To notify apache logs with over 1000000 (microseconds) duration for CRITICAL , or status '500' by string pattern match:
 
-Or install it yourself as:
+    <match apache.log.**>
+      type notifier
+      <def>
+        pattern apache_duration
+        check numeric_upward
+        warn_threshold  800000
+        crit_threshold 1000000
+        target_keys duration
+      </def>
+      <def>
+        pattern status_500
+        check string_find
+        warn_regexp 5\d\d
+        crit_regexp 500
+        target_key_pattern ^status.*$
+      </def>
+    </match>
 
-    $ gem install fluent-plugin-notifier
+With this configuration, you will get notification message like this:
 
-## Usage
+    2012-05-15 19:44:29 +0900 notification: {"pattern":"apache_duration","target_tag":"apache.log.xxx","target_key":"duration","check_type":"numeric_upward","level":"crit","threshold":1000000,"value":"1057231","message_time":"2012-05-15 19:44:27 +0900"}
+    2012-05-15 19:44:29 +0900 notification: {"pattern":"status_500","target_tag":"apache.log.xxx","target_key":"status","check_type":"string_find","level":"crit","regexp":"/500/","value":"500","message_time":"2012-05-15 19:44:27 +0900"}
 
-TODO: Write usage instructions here
+Available 'check' types: 'numeric\_upward', 'numeric\_downward' and 'string\_find'
 
-## Contributing
+Default configurations:
 
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Added some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+* tag: 'notification'
+  * in <match> top level, 'default\_tag', 'default\_tag\_warn,' and 'default\_tag\_crit' available
+  * in each <def> section, 'tag', 'tag\_warn' and 'tag\_crit' available
+* notification suppression
+  * at first, notified once in 1 minute, 5 times
+  * next, notified once in 5 minutes, 5 times
+  * last, notified once in 30 minutes
+  * in <match> top level, 'default\_interval\_1st', 'default\_interval\_2nd', 'default\_interval\_3rd', 'default\_repetitions\_1st' and 'default\_repetitions\_2nd' available
+  * in each <def> section, 'interval\_1st', 'interval\_2nd', 'interval\_3rd', 'repetitions\_1st' and 'repetitions\_2nd' available
+
+If you want to get every 5 minutes notifications (after 1 minutes notifications), specify '0' for 'repetitions\_2nd'.
+
+## TODO
+
+* long run
+
+## Copyright
+
+* Copyright
+  * Copyright (c) 2012- TAGOMORI Satoshi (tagomoris)
+* License
+  * Apache License, Version 2.0

@@ -3,8 +3,8 @@ class Fluent::NotifierOutput < Fluent::Output
 
   NOTIFICATION_LEVELS = ['OK', 'WARN', 'CRIT', 'LOST'].freeze
 
-  STATES_CLEAN_INTERVAL = 129600 # 36 hours
-  STATES_EXPIRE_SECONDS = 129600
+  STATES_CLEAN_INTERVAL = 3600 # 1hours
+  STATES_EXPIRE_SECONDS = 14400 # 4hours
 
   config_param :default_tag, :string, :default => 'notification'
   config_param :default_tag_warn, :string, :default => nil
@@ -242,7 +242,7 @@ class Fluent::NotifierOutput < Fluent::Output
             :match_def => self,
             :emit_tag => (@tag_crit || @tag),
             'pattern' => @pattern, 'target_tag' => tag, 'target_key' => key, 'check_type' => 'numeric_upward', 'level' => 'crit',
-            'threshold' => @crit_threshold, 'value' => record[key], 'message_time' => Time.at(time)
+            'threshold' => @crit_threshold, 'value' => record[key], 'message_time' => Time.at(time).to_s
           }
         elsif @warn_threshold and record[key].to_f >= @warn_threshold
           {
@@ -250,7 +250,7 @@ class Fluent::NotifierOutput < Fluent::Output
             :match_def => self,
             :emit_tag => (@tag_warn || @tag),
             'pattern' => @pattern, 'target_tag' => tag, 'target_key' => key, 'check_type' => 'numeric_upward', 'level' => 'warn',
-            'threshold' => @warn_threshold, 'value' => record[key], 'message_time' => Time.at(time)
+            'threshold' => @warn_threshold, 'value' => record[key], 'message_time' => Time.at(time).to_s
           }
         else
           nil
@@ -262,7 +262,7 @@ class Fluent::NotifierOutput < Fluent::Output
             :match_def => self,
             :emit_tag => (@tag_crit || @tag),
             'pattern' => @pattern, 'target_tag' => tag, 'target_key' => key, 'check_type' => 'numeric_downward', 'level' => 'crit',
-            'threshold' => @crit_threshold, 'value' => record[key], 'message_time' => Time.at(time)
+            'threshold' => @crit_threshold, 'value' => record[key], 'message_time' => Time.at(time).to_s
           }
         elsif @warn_threshold and record[key].to_f <= @warn_threshold
           {
@@ -270,7 +270,7 @@ class Fluent::NotifierOutput < Fluent::Output
             :match_def => self,
             :emit_tag => (@tag_warn || @tag),
             'pattern' => @pattern, 'target_tag' => tag, 'target_key' => key, 'check_type' => 'numeric_downward', 'level' => 'warn',
-            'threshold' => @warn_threshold, 'value' => record[key], 'message_time' => Time.at(time)
+            'threshold' => @warn_threshold, 'value' => record[key], 'message_time' => Time.at(time).to_s
           }
         else
           nil
@@ -282,7 +282,7 @@ class Fluent::NotifierOutput < Fluent::Output
             :match_def => self,
             :emit_tag => (@tag_crit || @tag),
             'pattern' => @pattern, 'target_tag' => tag, 'target_key' => key, 'check_type' => 'string_find', 'level' => 'crit',
-            'regexp' => @crit_regexp.inspect, 'value' => record[key], 'message_time' => Time.at(time)
+            'regexp' => @crit_regexp.inspect, 'value' => record[key], 'message_time' => Time.at(time).to_s
           }
         elsif @warn_regexp and @warn_regexp.match(record[key].to_s)
           {
@@ -290,7 +290,7 @@ class Fluent::NotifierOutput < Fluent::Output
             :match_def => self,
             :emit_tag => (@tag_warn || @tag),
             'pattern' => @pattern, 'target_tag' => tag, 'target_key' => key, 'check_type' => 'string_find', 'level' => 'warn',
-            'regexp' => @warn_regexp.inspect, 'value' => record[key], 'message_time' => Time.at(time)
+            'regexp' => @warn_regexp.inspect, 'value' => record[key], 'message_time' => Time.at(time).to_s
           }
         else
           nil
