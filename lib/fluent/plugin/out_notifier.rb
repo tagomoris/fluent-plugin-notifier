@@ -167,7 +167,7 @@ class Fluent::NotifierOutput < Fluent::Output
   class Definition
     attr_accessor :tag, :tag_warn, :tag_crit
     attr_accessor :intervals, :repetitions
-    attr_accessor :pattern, :check, :target_keys, :target_key_pattern
+    attr_accessor :pattern, :check, :target_keys, :target_key_pattern, :exclude_keys, :exclude_key_pattern
     attr_accessor :crit_threshold, :warn_threshold # for 'numeric_upward', 'numeric_downward'
     attr_accessor :crit_regexp, :warn_regexp # for 'string_find'
 
@@ -195,8 +195,10 @@ class Fluent::NotifierOutput < Fluent::Output
           end
         when 'target_keys'
           @target_keys = element['target_keys'].split(',')
+          @exclude_keys = (element['exclude_keys'] || '').split(',')
         when 'target_key_pattern'
           @target_key_pattern = Regexp.compile(element['target_key_pattern'])
+          @exclude_key_pattern = Regexp.compile(element['exclude_key_pattern'] || '^$')
         end
       end
       if @pattern.nil? or @pattern.length < 1
@@ -220,7 +222,11 @@ class Fluent::NotifierOutput < Fluent::Output
     end
 
     def match?(key)
-      (@target_keys and @target_keys.include?(key)) or (@target_key_pattern and @target_key_pattern.match(key))
+      if @target_keys
+        @target_keys.include?(key) and not @exclude_keys.include?(key)
+      elsif @target_key_pattern
+        @target_key_pattern.match(key) and not @exclude_key_pattern.match(key)
+      end
     end
 
 # {
