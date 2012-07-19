@@ -167,7 +167,7 @@ class Fluent::NotifierOutput < Fluent::Output
   class Definition
     attr_accessor :tag, :tag_warn, :tag_crit
     attr_accessor :intervals, :repetitions
-    attr_accessor :pattern, :check, :target_keys, :target_key_pattern, :exclude_keys, :exclude_key_pattern
+    attr_accessor :pattern, :check, :target_keys, :target_key_pattern, :exclude_key_pattern
     attr_accessor :crit_threshold, :warn_threshold # for 'numeric_upward', 'numeric_downward'
     attr_accessor :crit_regexp, :warn_regexp # for 'string_find'
 
@@ -195,7 +195,6 @@ class Fluent::NotifierOutput < Fluent::Output
           end
         when 'target_keys'
           @target_keys = element['target_keys'].split(',')
-          @exclude_keys = (element['exclude_keys'] || '').split(',')
         when 'target_key_pattern'
           @target_key_pattern = Regexp.compile(element['target_key_pattern'])
           @exclude_key_pattern = Regexp.compile(element['exclude_key_pattern'] || '^$')
@@ -223,7 +222,7 @@ class Fluent::NotifierOutput < Fluent::Output
 
     def match?(key)
       if @target_keys
-        @target_keys.include?(key) and not @exclude_keys.include?(key)
+        @target_keys.include?(key)
       elsif @target_key_pattern
         @target_key_pattern.match(key) and not @exclude_key_pattern.match(key)
       end
@@ -242,61 +241,64 @@ class Fluent::NotifierOutput < Fluent::Output
     def check(tag, time, record, key)
       case @check
       when :upward
-        if @crit_threshold and record[key].to_f >= @crit_threshold
+        value = record[key].to_f
+        if @crit_threshold and value >= @crit_threshold
           {
             :hashkey => @pattern + "\t" + tag + "\t" + key,
             :match_def => self,
             :emit_tag => (@tag_crit || @tag),
             'pattern' => @pattern, 'target_tag' => tag, 'target_key' => key, 'check_type' => 'numeric_upward', 'level' => 'crit',
-            'threshold' => @crit_threshold, 'value' => record[key], 'message_time' => Time.at(time).to_s
+            'threshold' => @crit_threshold, 'value' => value, 'message_time' => Time.at(time).to_s
           }
-        elsif @warn_threshold and record[key].to_f >= @warn_threshold
+        elsif @warn_threshold and value >= @warn_threshold
           {
             :hashkey => @pattern + "\t" + tag + "\t" + key,
             :match_def => self,
             :emit_tag => (@tag_warn || @tag),
             'pattern' => @pattern, 'target_tag' => tag, 'target_key' => key, 'check_type' => 'numeric_upward', 'level' => 'warn',
-            'threshold' => @warn_threshold, 'value' => record[key], 'message_time' => Time.at(time).to_s
+            'threshold' => @warn_threshold, 'value' => value, 'message_time' => Time.at(time).to_s
           }
         else
           nil
         end
       when :downward
-        if @crit_threshold and record[key].to_f <= @crit_threshold
+        value = record[key].to_f
+        if @crit_threshold and value <= @crit_threshold
           {
             :hashkey => @pattern + "\t" + tag + "\t" + key,
             :match_def => self,
             :emit_tag => (@tag_crit || @tag),
             'pattern' => @pattern, 'target_tag' => tag, 'target_key' => key, 'check_type' => 'numeric_downward', 'level' => 'crit',
-            'threshold' => @crit_threshold, 'value' => record[key], 'message_time' => Time.at(time).to_s
+            'threshold' => @crit_threshold, 'value' => value, 'message_time' => Time.at(time).to_s
           }
-        elsif @warn_threshold and record[key].to_f <= @warn_threshold
+        elsif @warn_threshold and value <= @warn_threshold
           {
             :hashkey => @pattern + "\t" + tag + "\t" + key,
             :match_def => self,
             :emit_tag => (@tag_warn || @tag),
             'pattern' => @pattern, 'target_tag' => tag, 'target_key' => key, 'check_type' => 'numeric_downward', 'level' => 'warn',
-            'threshold' => @warn_threshold, 'value' => record[key], 'message_time' => Time.at(time).to_s
+            'threshold' => @warn_threshold, 'value' => value, 'message_time' => Time.at(time).to_s
           }
         else
           nil
         end
       when :find
-        if @crit_regexp and @crit_regexp.match(record[key].to_s)
+        str = record[key].to_s
+        if @crit_regexp and @crit_regexp.match(str)
           {
             :hashkey => @pattern + "\t" + tag + "\t" + key,
             :match_def => self,
             :emit_tag => (@tag_crit || @tag),
             'pattern' => @pattern, 'target_tag' => tag, 'target_key' => key, 'check_type' => 'string_find', 'level' => 'crit',
-            'regexp' => @crit_regexp.inspect, 'value' => record[key], 'message_time' => Time.at(time).to_s
+            'regexp' => @crit_regexp.inspect, 'value' => str, 'message_time' => Time.at(time).to_s
           }
-        elsif @warn_regexp and @warn_regexp.match(record[key].to_s)
+        elsif @warn_regexp and @warn_regexp.match(str)
           {
             :hashkey => @pattern + "\t" + tag + "\t" + key,
             :match_def => self,
             :emit_tag => (@tag_warn || @tag),
             'pattern' => @pattern, 'target_tag' => tag, 'target_key' => key, 'check_type' => 'string_find', 'level' => 'warn',
-            'regexp' => @warn_regexp.inspect, 'value' => record[key], 'message_time' => Time.at(time).to_s
+            'regexp' => @warn_regexp.inspect, 'value' => str, 'message_time' => Time.at(time).to_s
           }
         else
           nil
