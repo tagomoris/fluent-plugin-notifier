@@ -27,6 +27,7 @@ To notify apache logs with over 1000000 (microseconds) duration for CRITICAL , o
         warn_regexp 5\d\d
         crit_regexp 500
         target_key_pattern ^status.*$
+        exclude_key_pattern ^status_ignore_.*$  # key name not to notify about...
       </def>
     </match>
 
@@ -53,7 +54,7 @@ If you want to get every 5 minutes notifications (after 1 minutes notifications)
 
 ## TODO
 
-* long run
+* patches welcome!
 
 ## Copyright
 
