@@ -16,7 +16,7 @@ class Fluent::NotifierOutput < Fluent::Output
   config_param :default_repetitions_2nd, :integer, :default => 5
   config_param :default_interval_3rd, :time, :default => 1800
 
-  attr_accessor :defs, :states, :match_cache, :negative_cache
+  attr_accessor :tests, :defs, :states, :match_cache, :negative_cache
   
 ### output
 # {
@@ -38,6 +38,18 @@ class Fluent::NotifierOutput < Fluent::Output
 #   default_interval_2nd 5m
 #   default_repetitions_2nd 5
 #   default_interval_3rd 30m
+#   <test>
+#     check numeric
+#     target_key xxx
+#     lower_threshold xxx
+#     upper_threshold xxx
+#   </test>
+#   <test>
+#     check regexp
+#     target_key xxx
+#     include_pattern ^.$
+#     exclude_pattern ^.$
+#   </test>
 #   <def>
 #     pattern http_status_errors
 #     check numeric_upward
@@ -65,6 +77,7 @@ class Fluent::NotifierOutput < Fluent::Output
 
     @match_cache = {} # cache which has map (fieldname => definition(s))
     @negative_cache = {}
+    @tests = []
     @defs = []
     @states = {} # key: tag+field ?
 
@@ -76,10 +89,14 @@ class Fluent::NotifierOutput < Fluent::Output
     }
 
     conf.elements.each do |element|
-      if element.name != 'def'
-        raise Fluent::ConfigError, "invalid section name for out_notifier: #{d.name}"
+      case element.name
+      when 'test'
+        @tests.push(Test.new(element))
+      when 'def'
+        @defs.push(Definition.new(element, defaults))
+      else
+        raise Fluent::ConfigError, "invalid section name for out_notifier: #{element.name}"
       end
-      defs.push(Definition.new(element, defaults))
     end
   end
 
@@ -120,12 +137,11 @@ class Fluent::NotifierOutput < Fluent::Output
     end
   end
 
-  def emit(tag, es, chain)
+  def check(tag, es)
     notifications = []
 
     es.each do |time,record|
       record.keys.each do |key|
-
         next if @negative_cache[key]
 
         defs = @match_cache[key]
@@ -134,12 +150,12 @@ class Fluent::NotifierOutput < Fluent::Output
           @defs.each do |d|
             defs.push(d) if d.match?(key)
           end
-          if defs.size < 1
-            @negative_cache[key] = true
-          end
+          @negative_cache[key] = true if defs.size < 1
         end
 
         defs.each do |d|
+          next unless @tests.reduce(true){|r,t| r and t.test(record)}
+
           alert = d.check(tag, time, record, key)
           if alert
             notifications.push(alert)
@@ -147,6 +163,12 @@ class Fluent::NotifierOutput < Fluent::Output
         end
       end
     end
+
+    notifications
+  end
+
+  def emit(tag, es, chain)
+    notifications = check(tag, es)
 
     if notifications.size > 0
       @mutex.synchronize do
@@ -162,6 +184,61 @@ class Fluent::NotifierOutput < Fluent::Output
     end
 
     chain.next
+  end
+
+  class Test
+    attr_accessor :check, :target_key
+    attr_accessor :lower_threshold, :upper_threshold
+    attr_accessor :include_pattern, :exclude_pattern
+
+    def initialize(element)
+      element.keys.each do |k|
+        v = element[k]
+        case k
+        when 'check'
+          case v
+          when 'numeric'
+            @check = :numeric
+            @lower_threshold = element['lower_threshold'] ? element['lower_threshold'].to_f : nil
+            @upper_threshold = element['upper_threshold'] ? element['upper_threshold'].to_f : nil
+            if @lower_threshold.nil? and @upper_threshold.nil?
+              raise Fluent::ConfigError, "At least one of lower_threshold or upper_threshold must be specified for 'check numeric'"
+            end
+          when 'regexp'
+            @check = :regexp
+            @include_pattern = element['include_pattern'] ? Regexp.compile(element['include_pattern']) : nil
+            @exclude_pattern = element['exclude_pattern'] ? Regexp.compile(element['exclude_pattern']) : nil
+            if @include_pattern.nil? and @exclude_pattern.nil?
+              raise Fluent::ConfigError, "At least one of include_pattern or exclude_pattern must be specified for 'check regexp'"
+            end
+          else
+            raise Fluent::ConfigError, "invalid check value of test [numeric/regexp]: '#{v}'"
+          end
+        when 'target_key'
+          @target_key = v
+        end
+      end
+      unless @target_key
+        raise Fluent::ConfigError, "'target_key' missing in <test> section"
+      end
+      unless @check
+        raise Fluent::ConfigError, "'check' missing in <test> section"
+      end
+    end
+
+    def test(record)
+      v = record[@target_key]
+      return false if v.nil?
+
+      case @check
+      when :numeric
+        v = v.to_f
+        (@lower_threshold.nil? or @lower_threshold <= v) and (@upper_threshold.nil? or v <= @upper_threshold)
+      when :regexp
+        v = v.to_s.force_encoding('ASCII-8BIT')
+        ((@include_pattern.nil? or @include_pattern.match(v)) and (@exclude_pattern.nil? or (not @exclude_pattern.match(v)))) or false
+      end
+    end
   end
 
   class Definition
@@ -180,14 +257,23 @@ class Fluent::NotifierOutput < Fluent::Output
           case element[k]
           when 'numeric_upward'
             @check = :upward
+            unless element.has_key?('crit_threshold') and element.has_key?('warn_threshold')
+              raise Fluent::ConfigError, "Both of crit_threshold and warn_threshold must be specified for 'check numeric_upward'"
+            end
             @crit_threshold = element['crit_threshold'].to_f
             @warn_threshold = element['warn_threshold'].to_f
           when 'numeric_downward'
             @check = :downward
+            unless element.has_key?('crit_threshold') and element.has_key?('warn_threshold')
+              raise Fluent::ConfigError, "Both of crit_threshold and warn_threshold must be specified for 'check_numeric_downward'"
+            end
             @crit_threshold = element['crit_threshold'].to_f
             @warn_threshold = element['warn_threshold'].to_f
           when 'string_find'
             @check = :find
+            unless element.has_key?('crit_regexp') and element.has_key?('warn_regexp')
+              raise Fluent::ConfigError, "Both of crit_regexp and warn_regexp must be specified for 'check string_find'"
+            end
             @crit_regexp = Regexp.compile(element['crit_regexp'].to_s)
             @warn_regexp = Regexp.compile(element['warn_regexp'].to_s)
           else
