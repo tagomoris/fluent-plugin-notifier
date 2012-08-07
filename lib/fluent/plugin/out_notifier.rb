@@ -168,7 +168,7 @@ class Fluent::NotifierOutput < Fluent::Output
         end
 
         defs.each do |d|
-          next unless @tests.reduce(true){|r,t| r and t.test(record)}
+          next unless @tests.reduce(true){|r,t| r and t.test(tag, record)}
 
           alert = d.check(tag, time, record, key)
           if alert
@@ -211,6 +211,13 @@ class Fluent::NotifierOutput < Fluent::Output
         case k
         when 'check'
           case v
+          when 'tag'
+            @check = :tag
+            @include_pattern = element['include_pattern'] ? Regexp.compile(element['include_pattern']) : nil
+            @exclude_pattern = element['exclude_pattern'] ? Regexp.compile(element['exclude_pattern']) : nil
+            if @include_pattern.nil? and @exclude_pattern.nil?
+              raise Fluent::ConfigError, "At least one of include_pattern or exclude_pattern must be specified for 'check tag'"
+            end
           when 'numeric'
             @check = :numeric
             @lower_threshold = element['lower_threshold'] ? element['lower_threshold'].to_f : nil
@@ -232,23 +239,28 @@ class Fluent::NotifierOutput < Fluent::Output
           @target_key = v
         end
       end
-      unless @target_key
-        raise Fluent::ConfigError, "'target_key' missing in <test> section"
-      end
       unless @check
         raise Fluent::ConfigError, "'check' missing in <test> section"
       end
+      if @target_key.nil? and @check != :tag
+        raise Fluent::ConfigError, "'target_key' missing in <test> section"
+      end
     end
 
-    def test(record)
-      v = record[@target_key]
+    def test(tag, record)
+      v = case @check
+          when :numeric, :regexp
+            record[@target_key]
+          when :tag
+            tag
+          end
       return false if v.nil?
 
       case @check
       when :numeric
         v = v.to_f
         (@lower_threshold.nil? or @lower_threshold <= v) and (@upper_threshold.nil? or v <= @upper_threshold)
-      when :regexp
+      when :tag, :regexp
         v = v.to_s.force_encoding('ASCII-8BIT')
         ((@include_pattern.nil? or @include_pattern.match(v)) and (@exclude_pattern.nil? or (not @exclude_pattern.match(v)))) or false
       end
