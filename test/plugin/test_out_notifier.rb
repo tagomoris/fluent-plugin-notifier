@@ -3,6 +3,7 @@ require 'helper'
 class NotifierOutputTest < Test::Unit::TestCase
   CONFIG = %[
   type notifier
+  input_tag_remove_prefix test
   <test>
     check numeric
     target_key numfield
@@ -56,14 +57,14 @@ class NotifierOutputTest < Test::Unit::TestCase
     end
     assert_equal 0, d.emits.size
 
-    d = create_driver
+    d = create_driver(CONFIG, 'test.input')
     d.run do
       d.emit({'num1' => 30, 'message' => 'INFO', 'numfield' => '30', 'textfield' => 'TargetX'})
     end
     assert_equal 1, d.emits.size
     assert_equal 'alert.warn', d.emits[0][0]
     assert_equal 'pattern1', d.emits[0][2]['pattern']
-    assert_equal 'test', d.emits[0][2]['target_tag']
+    assert_equal 'input', d.emits[0][2]['target_tag']
     assert_equal 'numeric_upward', d.emits[0][2]['check_type']
     assert_equal 'warn', d.emits[0][2]['level']
     assert_equal 25.0, d.emits[0][2]['threshold']

@@ -16,6 +16,8 @@ class Fluent::NotifierOutput < Fluent::Output
   config_param :default_repetitions_2nd, :integer, :default => 5
   config_param :default_interval_3rd, :time, :default => 1800
 
+  config_param :input_tag_remove_prefix, :string, :default => nil
+
   attr_accessor :tests, :defs, :states, :match_cache, :negative_cache
   
 ### output
@@ -81,6 +83,11 @@ class Fluent::NotifierOutput < Fluent::Output
     @defs = []
     @states = {} # key: tag+field ?
 
+    if @input_tag_remove_prefix
+      @input_tag_remove_prefix_string = @input_tag_remove_prefix + '.'
+      @input_tag_remove_prefix_length = @input_tag_remove_prefix_string.length
+    end
+
     defaults = {
       :tag => @default_tag, :tag_warn => @default_tag_warn, :tag_crit => @default_tag_crit,
       :interval_1st => @default_interval_1st, :repetitions_1st => @default_repetitions_1st,
@@ -139,6 +146,13 @@ class Fluent::NotifierOutput < Fluent::Output
 
   def check(tag, es)
     notifications = []
+
+    tag = if @input_tag_remove_prefix and
+              tag.start_with?(@input_tag_remove_prefix_string) and tag.length > @input_tag_remove_prefix_length
+            tag[@input_tag_remove_prefix_length..-1]
+          else
+            tag
+          end
 
     es.each do |time,record|
       record.keys.each do |key|
