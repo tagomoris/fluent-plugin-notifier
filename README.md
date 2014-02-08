@@ -1,10 +1,10 @@
-# fluent-plugin-notifier, a plugin for [Fluentd](http://fluentd.org)
+# fluent-plugin-notifier
 
 ## Component
 
 ### NotifierOutput
 
-Plugin to emit notifications for messages, with numbers over/under threshold, or specified pattern strings.
+[Fluentd](http://fluentd.org) plugin to emit notifications for messages, with numbers over/under threshold, or specified pattern strings.
 
 ## Configuration
 
