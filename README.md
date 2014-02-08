@@ -1,4 +1,4 @@
-# fluent-plugin-notifier
+# fluent-plugin-notifier, a plugin for [Fluentd](http://fluentd.org)
 
 ## Component
 
