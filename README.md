@@ -4,7 +4,7 @@
 
 ### NotifierOutput
 
-Plugin to emit notifications for messages, with numbers over/under threshold, or specified pattern strings.
+[Fluentd](http://fluentd.org) plugin to emit notifications for messages, with numbers over/under threshold, or specified pattern strings.
 
 ## Configuration
 
