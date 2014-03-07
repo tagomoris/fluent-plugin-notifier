@@ -9,7 +9,7 @@ class Fluent::NotifierOutput < Fluent::Output
   config_param :default_tag, :string, :default => 'notification'
   config_param :default_tag_warn, :string, :default => nil
   config_param :default_tag_crit, :string, :default => nil
-  
+
   config_param :default_interval_1st, :time, :default => 60
   config_param :default_repetitions_1st, :integer, :default => 5
   config_param :default_interval_2nd, :time, :default => 300
@@ -19,7 +19,7 @@ class Fluent::NotifierOutput < Fluent::Output
   config_param :input_tag_remove_prefix, :string, :default => nil
 
   attr_accessor :tests, :defs, :states, :match_cache, :negative_cache
-  
+
 ### output
 # {
 #  'pattern' => 'http_status_errors',
@@ -73,6 +73,11 @@ class Fluent::NotifierOutput < Fluent::Output
 #     target_key_pattern ^.*_message$
 #   </def>
 # </match>
+
+  # Define `log` method for v0.10.42 or earlier
+  unless method_defined?(:log)
+    define_method("log") { $log }
+  end
 
   def configure(conf)
     super
