@@ -327,13 +327,13 @@ class Fluent::NotifierOutput < Fluent::Output
       @tag_warn = element['tag_warn'] || defaults[:tag_warn]
       @tag_crit = element['tag_crit'] || defaults[:tag_crit]
       @intervals = [
-                    (element['interval_1st'] || defaults[:interval_1st]),
-                    (element['interval_2nd'] || defaults[:interval_2nd]),
-                    (element['interval_3rd'] || defaults[:interval_3rd])
+                    (element['interval_1st'] || defaults[:interval_1st]).to_f,
+                    (element['interval_2nd'] || defaults[:interval_2nd]).to_f,
+                    (element['interval_3rd'] || defaults[:interval_3rd]).to_f
                    ]
       @repetitions = [
-                      (element['repetitions_1st'] || defaults[:repetitions_1st]),
-                      (element['repetitions_2nd'] || defaults[:repetitions_2nd])
+                      (element['repetitions_1st'] || defaults[:repetitions_1st]).to_f,
+                      (element['repetitions_2nd'] || defaults[:repetitions_2nd]).to_f
                      ]
     end
 

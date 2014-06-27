@@ -16,9 +16,9 @@ class NotifierOutputStateTest < Test::Unit::TestCase
     'tag_warn' => 'warn', 'tag_crit' => 'crit',
     'pattern' => 'name2', 'target_key_pattern' => '^field\d$',
     'check' => 'string_find', 'warn_regexp' => 'WARN', 'crit_regexp' => 'CRIT',
-    'interval_1st' => 5, 'repetitions_1st' => 1,
-    'interval_2nd' => 6, 'repetitions_2nd' => 2,
-    'interval_3rd' => 7
+    'interval_1st' => '5', 'repetitions_1st' => '1',
+    'interval_2nd' => '6', 'repetitions_2nd' => '2',
+    'interval_3rd' => '7'
   }
 
   def test_init
