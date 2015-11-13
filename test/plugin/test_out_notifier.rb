@@ -112,4 +112,14 @@ class NotifierOutputTest < Test::Unit::TestCase
     end
     assert_equal 0, d.emits.size
   end
+
+  def test_emit_invalid_byte
+    invalid_utf8 = "\xff".force_encoding('UTF-8')
+    d = create_driver
+    assert_nothing_raised {
+      d.run do
+        d.emit({'num1' => 60, 'message' => "foo bar WARNING #{invalid_utf8}", 'numfield' => '30', 'textfield' => 'TargetX'})
+      end
+    }
+  end
 end

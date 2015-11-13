@@ -401,7 +401,7 @@ class Fluent::NotifierOutput < Fluent::Output
         end
       when :find
         str = record[key].to_s
-        if @crit_regexp and @crit_regexp.match(str)
+        if match(@crit_regexp, str)
           {
             :hashkey => @pattern + "\t" + tag + "\t" + key,
             :match_def => self,
@@ -409,7 +409,7 @@ class Fluent::NotifierOutput < Fluent::Output
             'pattern' => @pattern, 'target_tag' => tag, 'target_key' => key, 'check_type' => 'string_find', 'level' => 'crit',
             'regexp' => @crit_regexp.inspect, 'value' => str, 'message_time' => Time.at(time).to_s
           }
-        elsif @warn_regexp and @warn_regexp.match(str)
+        elsif match(@warn_regexp, str)
           {
             :hashkey => @pattern + "\t" + tag + "\t" + key,
             :match_def => self,
@@ -423,6 +423,20 @@ class Fluent::NotifierOutput < Fluent::Output
       else
         raise ArgumentError, "unknown check type (maybe bug): #{@check}"
       end
+    end
+
+    def match(regexp,string)
+      regexp && regexp.match(string)
+    rescue ArgumentError => e
+      raise e unless e.message.index("invalid byte sequence in") == 0
+      replaced_string = replace_invalid_byte(string)
+      regexp.match(replaced_string)
+    end
+
+    def replace_invalid_byte(string)
+       replace_options = { invalid: :replace, undef: :replace, replace: '?' }
+       temporal_encoding = (string.encoding == Encoding::UTF_8 ? Encoding::UTF_16BE : Encoding::UTF_8)
+       string.encode(temporal_encoding, string.encoding, replace_options).encode(string.encoding)
     end
   end
 
