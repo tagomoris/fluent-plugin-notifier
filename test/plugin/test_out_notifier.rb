@@ -1,6 +1,10 @@
 require 'helper'
 
 class NotifierOutputTest < Test::Unit::TestCase
+  def setup
+    Fluent::Test.setup
+  end
+
   CONFIG = %[
   type notifier
   input_tag_remove_prefix test
