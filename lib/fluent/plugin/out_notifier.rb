@@ -79,6 +79,11 @@ class Fluent::NotifierOutput < Fluent::Output
     define_method("log") { $log }
   end
 
+  # Define `log` method for v0.10.57 or earlier
+  unless method_defined?(:router)
+    define_method(:router) { Fluent::Engine }
+  end
+
   def configure(conf)
     super
 
@@ -130,11 +135,11 @@ class Fluent::NotifierOutput < Fluent::Output
       state = @states[hashkey]
       if state
         unless state.suppress?(definition, n)
-          Fluent::Engine.emit(tag, Fluent::Engine.now, n)
+          router.emit(tag, Fluent::Engine.now, n)
           state.update_notified(definition, n)
         end
       else
-        Fluent::Engine.emit(tag, Fluent::Engine.now, n)
+        router.emit(tag, Fluent::Engine.now, n)
         @states[hashkey] = State.new(n)
       end
     end
