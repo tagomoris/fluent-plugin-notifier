@@ -7,7 +7,7 @@ Gem::Specification.new do |gem|
   gem.summary       = %q{check matched messages and emit alert message}
   gem.description   = %q{check matched messages and emit alert message with throttling by conditions...}
   gem.homepage      = "https://github.com/tagomoris/fluent-plugin-notifier"
-  gem.license       = "APLv2"
+  gem.license       = "Apache-2.0"
 
   gem.files         = `git ls-files`.split($\)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
