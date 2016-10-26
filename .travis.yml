@@ -2,3 +2,45 @@ language: ruby
 rvm:
   - 1.9.3
   - 2.0.0
+  - 2.1.10
+  - 2.2.5
+  - 2.3.1
+
+gemfile:
+  - gemfiles/fluentd_v0.10.gemfile
+  - gemfiles/fluentd_v0.12.gemfile
+  - gemfiles/fluentd_v0.14.gemfile
+
+matrix:
+  include:
+    - rvm: 1.9.3
+      gemfile: gemfiles/fluentd_v0.10.gemfile
+    - rvm: 2.0.0
+      gemfile: gemfiles/fluentd_v0.10.gemfile
+    - rvm: 2.1.10
+      gemfile: gemfiles/fluentd_v0.12.gemfile
+    - rvm: 2.2.5
+      gemfile: gemfiles/fluentd_v0.12.gemfile
+    - rvm: 2.3.1
+      gemfile: gemfiles/fluentd_v0.12.gemfile
+    - rvm: 2.1.10
+      gemfile: gemfiles/fluentd_v0.14.gemfile
+    - rvm: 2.2.5
+      gemfile: gemfiles/fluentd_v0.14.gemfile
+    - rvm: 2.3.1
+      gemfile: gemfiles/fluentd_v0.14.gemfile
+  exclude:
+    - rvm: 1.9.3
+      gemfile: gemfiles/fluentd_v0.12.gemfile
+    - rvm: 1.9.3
+      gemfile: gemfiles/fluentd_v0.14.gemfile
+    - rvm: 2.0.0
+      gemfile: gemfiles/fluentd_v0.12.gemfile
+    - rvm: 2.0.0
+      gemfile: gemfiles/fluentd_v0.14.gemfile
+    - rvm: 2.1.10
+      gemfile: gemfiles/fluentd_v0.10.gemfile
+    - rvm: 2.2.5
+      gemfile: gemfiles/fluentd_v0.10.gemfile
+    - rvm: 2.3.0
+      gemfile: gemfiles/fluentd_v0.10.gemfile
