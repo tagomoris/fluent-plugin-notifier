@@ -66,7 +66,7 @@ class NotifierOutputTest < Test::Unit::TestCase
   end
 
   test "notify 1 event when num1 > warn_threshold and satisfy test conditions" do
-    d = create_driver(CONFIG)
+    d = create_driver
     d.run(default_tag: "test.input") do
       d.feed({'num1' => 30, 'message' => 'INFO', 'numfield' => '30', 'textfield' => 'TargetX'})
     end
