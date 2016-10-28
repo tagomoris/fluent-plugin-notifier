@@ -74,16 +74,6 @@ class Fluent::NotifierOutput < Fluent::Output
 #   </def>
 # </match>
 
-  # Define `log` method for v0.10.42 or earlier
-  unless method_defined?(:log)
-    define_method("log") { $log }
-  end
-
-  # Define `log` method for v0.10.57 or earlier
-  unless method_defined?(:router)
-    define_method(:router) { Fluent::Engine }
-  end
-
   def configure(conf)
     super
 
