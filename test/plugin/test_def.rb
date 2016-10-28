@@ -2,10 +2,10 @@ require 'helper'
 
 class NotifierOutputDefinitionTest < Test::Unit::TestCase
   TEST_DEFAULTS = {
-    :tag => 'n', :tag_warn => nil, :tag_crit => nil,
-    :interval_1st => 60, :repetitions_1st => 5,
-    :interval_2nd => 300, :repetitions_2nd => 5,
-    :interval_3rd => 1800
+    tag: 'n', tag_warn: nil, tag_crit: nil,
+    interval_1st: 60, repetitions_1st: 5,
+    interval_2nd: 300, repetitions_2nd: 5,
+    interval_3rd: 1800
   }
 
   TEST_CONF1 = {
