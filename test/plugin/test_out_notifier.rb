@@ -49,19 +49,23 @@ class NotifierOutputTest < Test::Unit::TestCase
     end
   end
 
-  def test_emit
+  test "notify 0 events when num1 < warn_threshold and no test conditions" do
     d = create_driver
     d.run(default_tag: "test") do
       d.feed({'num1' => 20, 'message' => 'INFO'})
     end
     assert_equal 0, d.events.size
+  end
 
+  test "notify 0 events when num1 > warn_threshold but no test conditions are satisfied" do
     d = create_driver
     d.run(default_tag: "test") do
       d.feed({'num1' => 30, 'message' => 'INFO'})
     end
     assert_equal 0, d.events.size
+  end
 
+  test "notify 1 event when num1 > warn_threshold and satisfy test conditions" do
     d = create_driver(CONFIG)
     d.run(default_tag: "test.input") do
       d.feed({'num1' => 30, 'message' => 'INFO', 'numfield' => '30', 'textfield' => 'TargetX'})
@@ -74,7 +78,9 @@ class NotifierOutputTest < Test::Unit::TestCase
     assert_equal 'warn', d.events[0][2]['level']
     assert_equal 25.0, d.events[0][2]['threshold']
     assert_equal 30.0, d.events[0][2]['value']
+  end
 
+  test "notify 2 events when num1 > crit_threshold and message match warn_regexp" do
     d = create_driver
     d.run(default_tag: "test") do
       d.feed({'num1' => 60, 'message' => 'foo bar WARNING xxxxx', 'numfield' => '30', 'textfield' => 'TargetX'})
@@ -94,19 +100,25 @@ class NotifierOutputTest < Test::Unit::TestCase
     assert_equal 'warn', d.events[1][2]['level']
     assert_equal '/WARNING/', d.events[1][2]['regexp']
     assert_equal 'foo bar WARNING xxxxx', d.events[1][2]['value']
+  end
 
+  test "notify 0 events when test conditions are not satisfied numfield < lower_threshold" do
     d = create_driver
     d.run(default_tag: "test") do
       d.feed({'num1' => 60, 'message' => 'foo bar WARNING xxxxx', 'numfield' => '2.4', 'textfield' => 'TargetX'})
     end
     assert_equal 0, d.events.size
+  end
 
+  test "notify 0 events when test conditions are not satisfied textfield matches exclude_pattern" do
     d = create_driver
     d.run(default_tag: "test") do
       d.feed({'num1' => 60, 'message' => 'foo bar WARNING xxxxx', 'numfield' => '20', 'textfield' => 'TargetC'})
     end
     assert_equal 0, d.events.size
+  end
 
+  test "notify 0 events when test conditions are not satisfied textfield is missing" do
     d = create_driver
     d.run(default_tag: "test") do
       d.feed({'num1' => 60, 'message' => 'foo bar WARNING xxxxx', 'numfield' => '20'})
