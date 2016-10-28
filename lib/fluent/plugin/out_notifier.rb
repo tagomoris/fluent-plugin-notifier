@@ -273,7 +273,7 @@ class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
   class Definition
     attr_accessor :tag, :tag_warn, :tag_crit
     attr_accessor :intervals, :repetitions
-    attr_accessor :pattern, :check, :target_keys, :target_key_pattern, :exclude_key_pattern
+    attr_accessor :pattern, :target_keys, :target_key_pattern, :exclude_key_pattern
     attr_accessor :crit_threshold, :warn_threshold # for 'numeric_upward', 'numeric_downward'
     attr_accessor :crit_regexp, :warn_regexp # for 'string_find'
 
