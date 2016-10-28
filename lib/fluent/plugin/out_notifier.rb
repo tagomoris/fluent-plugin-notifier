@@ -1,5 +1,9 @@
-class Fluent::NotifierOutput < Fluent::Output
+require "fluent/plugin/output"
+
+class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
   Fluent::Plugin.register_output('notifier', self)
+
+  helpers :event_emitter
 
   NOTIFICATION_LEVELS = ['OK', 'WARN', 'CRIT', 'LOST'].freeze
 
@@ -181,7 +185,7 @@ class Fluent::NotifierOutput < Fluent::Output
     notifications
   end
 
-  def emit(tag, es, chain)
+  def process(tag, es)
     notifications = check(tag, es)
 
     if notifications.size > 0
@@ -196,8 +200,6 @@ class Fluent::NotifierOutput < Fluent::Output
         @last_status_cleaned = Fluent::Engine.now
       end
     end
-
-    chain.next
   end
 
   class Test
