@@ -22,7 +22,7 @@ class NotifierOutputStateTest < Test::Unit::TestCase
   }
 
   def test_init
-    s = Fluent::NotifierOutput::State.new({
+    s = Fluent::Plugin::NotifierOutput::State.new({
         :pattern => 'name1', :target_tag => 'test.tag', :target_key => 'field1', 'level' => 'warn'
       })
     assert_equal 'name1', s.pattern
@@ -36,27 +36,27 @@ class NotifierOutputStateTest < Test::Unit::TestCase
   end
 
   def test_suppress?
-    s = Fluent::NotifierOutput::State.new({
+    s = Fluent::Plugin::NotifierOutput::State.new({
         :pattern => 'name1', :target_tag => 'test.tag', :target_key => 'field1', 'level' => 'warn'
       })
-    d = Fluent::NotifierOutput::Definition.new(TEST_DEF_CONF1, TEST_DEF_DEFAULTS)
+    d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_DEF_CONF1, TEST_DEF_DEFAULTS)
     s.last_notified = Fluent::Engine.now - TEST_DEF_DEFAULTS[:interval_1st] + 5
     assert_equal true, s.suppress?(d, {:pattern => 'name1', :target_tag => 'test.tag', :target_key => 'field1', 'level' => 'warn'})
     s.last_notified = Fluent::Engine.now - TEST_DEF_DEFAULTS[:interval_1st] - 5
     assert_equal false, s.suppress?(d, {:pattern => 'name1', :target_tag => 'test.tag', :target_key => 'field1', 'level' => 'warn'})
 
-    s = Fluent::NotifierOutput::State.new({
+    s = Fluent::Plugin::NotifierOutput::State.new({
         :pattern => 'name1', :target_tag => 'test.tag', :target_key => 'field1', 'level' => 'warn'
       })
-    d = Fluent::NotifierOutput::Definition.new(TEST_DEF_CONF1, TEST_DEF_DEFAULTS)
+    d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_DEF_CONF1, TEST_DEF_DEFAULTS)
     assert_equal true, s.suppress?(d, {:pattern => 'name1', :target_tag => 'test.tag', :target_key => 'field1', 'level' => 'crit'})
   end
 
   def test_update_notified
-    s = Fluent::NotifierOutput::State.new({
+    s = Fluent::Plugin::NotifierOutput::State.new({
         :pattern => 'name2', :target_tag => 'test.tag', :target_key => 'field1', 'level' => 'warn'
       })
-    d = Fluent::NotifierOutput::Definition.new(TEST_DEF_CONF2, TEST_DEF_DEFAULTS)
+    d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_DEF_CONF2, TEST_DEF_DEFAULTS)
 
     assert_equal 0, s.stage
     assert_equal 1, s.counter

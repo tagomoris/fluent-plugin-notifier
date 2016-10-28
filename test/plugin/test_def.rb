@@ -24,7 +24,7 @@ class NotifierOutputDefinitionTest < Test::Unit::TestCase
   }
 
   def test_init
-    d = Fluent::NotifierOutput::Definition.new(TEST_CONF1, TEST_DEFAULTS)
+    d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_CONF1, TEST_DEFAULTS)
     assert_equal 'name1', d.pattern
     assert_equal ['field1','field2'], d.target_keys
     assert_equal :upward, d.instance_eval{ @check }
@@ -36,7 +36,7 @@ class NotifierOutputDefinitionTest < Test::Unit::TestCase
     assert_equal [60, 300, 1800], d.intervals
     assert_equal [5, 5], d.repetitions
 
-    d = Fluent::NotifierOutput::Definition.new(TEST_CONF2, TEST_DEFAULTS)
+    d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_CONF2, TEST_DEFAULTS)
     assert_equal 'name2', d.pattern
     assert_equal /^field\d$/, d.target_key_pattern
     assert_equal /^$/, d.exclude_key_pattern
@@ -51,14 +51,14 @@ class NotifierOutputDefinitionTest < Test::Unit::TestCase
   end
 
   def test_match
-    d = Fluent::NotifierOutput::Definition.new(TEST_CONF1, TEST_DEFAULTS)
+    d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_CONF1, TEST_DEFAULTS)
     assert_equal true, d.match?('field1')
     assert_equal true, d.match?('field2')
     assert ! d.match?('field0')
     assert ! d.match?('field')
     assert ! d.match?('')
 
-    d = Fluent::NotifierOutput::Definition.new(TEST_CONF2, TEST_DEFAULTS)
+    d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_CONF2, TEST_DEFAULTS)
     assert_equal true, d.match?('field0')
     assert_equal true, d.match?('field1')
     assert_equal true, d.match?('field9')
@@ -67,7 +67,7 @@ class NotifierOutputDefinitionTest < Test::Unit::TestCase
     assert ! d.match?(' field0')
     assert ! d.match?('field0 ')
 
-    d = Fluent::NotifierOutput::Definition.new(TEST_CONF2.merge({'exclude_key_pattern' => '^field[7-9]$'}), TEST_DEFAULTS)
+    d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_CONF2.merge({'exclude_key_pattern' => '^field[7-9]$'}), TEST_DEFAULTS)
     assert_equal true, d.match?('field0')
     assert_equal true, d.match?('field1')
     assert ! d.match?('field7')
@@ -77,7 +77,7 @@ class NotifierOutputDefinitionTest < Test::Unit::TestCase
 
   def test_check_numeric
     t = Time.strptime('2012-07-19 14:40:30', '%Y-%m-%d %T')
-    d = Fluent::NotifierOutput::Definition.new(TEST_CONF1, TEST_DEFAULTS)
+    d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_CONF1, TEST_DEFAULTS)
     r = d.check('test.tag', t.to_i, {'field1' => '0.8', 'field2' => '1.5'}, 'field1')
     assert_nil r
 
@@ -110,7 +110,7 @@ class NotifierOutputDefinitionTest < Test::Unit::TestCase
 
   def test_check_string
     t = Time.strptime('2012-07-19 14:40:30', '%Y-%m-%d %T')
-    d = Fluent::NotifierOutput::Definition.new(TEST_CONF2, TEST_DEFAULTS)
+    d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_CONF2, TEST_DEFAULTS)
     r = d.check('test.tag', t.to_i, {'field0' => 'hoge pos', 'field1' => 'CRIT fooooooo baaaaarrrrrrr'}, 'field0')
     assert_nil r
 
