@@ -208,6 +208,7 @@ class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
     attr_accessor :include_pattern, :exclude_pattern
 
     def initialize(element)
+      @target_key = nil
       element.keys.each do |k|
         v = element[k]
         case k
@@ -277,6 +278,7 @@ class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
     attr_accessor :crit_regexp, :warn_regexp # for 'string_find'
 
     def initialize(element, defaults)
+      @target_keys = nil
       element.keys.each do |k|
         case k
         when 'pattern'
