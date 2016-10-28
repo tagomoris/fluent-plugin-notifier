@@ -25,14 +25,14 @@ class NotifierOutputStateTest < Test::Unit::TestCase
     s = Fluent::Plugin::NotifierOutput::State.new({
         :pattern => 'name1', :target_tag => 'test.tag', :target_key => 'field1', 'level' => 'warn'
       })
-    assert_equal 'name1', s.pattern
-    assert_equal 'test.tag', s.target_tag
-    assert_equal 'field1', s.target_key
-    assert_equal 'warn', s.level
-    assert_equal 0, s.stage
-    assert_equal 1, s.counter
-    assert (s.first_notified <= Fluent::Engine.now)
-    assert (s.last_notified <= Fluent::Engine.now)
+    assert_equal('name1', s.pattern)
+    assert_equal('test.tag', s.target_tag)
+    assert_equal('field1', s.target_key)
+    assert_equal('warn', s.level)
+    assert_equal(0, s.stage)
+    assert_equal(1, s.counter)
+    assert { s.first_notified <= Fluent::Engine.now }
+    assert { s.last_notified <= Fluent::Engine.now }
   end
 
   def test_suppress?
@@ -41,15 +41,15 @@ class NotifierOutputStateTest < Test::Unit::TestCase
       })
     d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_DEF_CONF1, TEST_DEF_DEFAULTS)
     s.last_notified = Fluent::Engine.now - TEST_DEF_DEFAULTS[:interval_1st] + 5
-    assert_equal true, s.suppress?(d, {:pattern => 'name1', :target_tag => 'test.tag', :target_key => 'field1', 'level' => 'warn'})
+    assert_equal(true, s.suppress?(d, {:pattern => 'name1', :target_tag => 'test.tag', :target_key => 'field1', 'level' => 'warn'}))
     s.last_notified = Fluent::Engine.now - TEST_DEF_DEFAULTS[:interval_1st] - 5
-    assert_equal false, s.suppress?(d, {:pattern => 'name1', :target_tag => 'test.tag', :target_key => 'field1', 'level' => 'warn'})
+    assert_equal(false, s.suppress?(d, {:pattern => 'name1', :target_tag => 'test.tag', :target_key => 'field1', 'level' => 'warn'}))
 
     s = Fluent::Plugin::NotifierOutput::State.new({
         :pattern => 'name1', :target_tag => 'test.tag', :target_key => 'field1', 'level' => 'warn'
       })
     d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_DEF_CONF1, TEST_DEF_DEFAULTS)
-    assert_equal true, s.suppress?(d, {:pattern => 'name1', :target_tag => 'test.tag', :target_key => 'field1', 'level' => 'crit'})
+    assert_equal(true, s.suppress?(d, {:pattern => 'name1', :target_tag => 'test.tag', :target_key => 'field1', 'level' => 'crit'}))
   end
 
   def test_update_notified
@@ -58,19 +58,19 @@ class NotifierOutputStateTest < Test::Unit::TestCase
       })
     d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_DEF_CONF2, TEST_DEF_DEFAULTS)
 
-    assert_equal 0, s.stage
-    assert_equal 1, s.counter
+    assert_equal(0, s.stage)
+    assert_equal(1, s.counter)
 
     s.update_notified(d, {:pattern => 'name2', :target_tag => 'test.tag', :target_key => 'field1', 'level' => 'warn'})
-    assert_equal 1, s.stage
-    assert_equal 0, s.counter
+    assert_equal(1, s.stage)
+    assert_equal(0, s.counter)
     
     s.update_notified(d, {:pattern => 'name2', :target_tag => 'test.tag', :target_key => 'field1', 'level' => 'warn'})
-    assert_equal 1, s.stage
-    assert_equal 1, s.counter
+    assert_equal(1, s.stage)
+    assert_equal(1, s.counter)
 
     s.update_notified(d, {:pattern => 'name2', :target_tag => 'test.tag', :target_key => 'field1', 'level' => 'crit'})
-    assert_equal 0, s.stage
-    assert_equal 1, s.counter
+    assert_equal(0, s.stage)
+    assert_equal(1, s.counter)
   end
 end
