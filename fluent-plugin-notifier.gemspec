@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 Gem::Specification.new do |gem|
   gem.name          = "fluent-plugin-notifier"
-  gem.version       = "0.2.4"
+  gem.version       = "0.3.0"
   gem.authors       = ["TAGOMORI Satoshi"]
   gem.email         = ["tagomoris@gmail.com"]
   gem.summary       = %q{check matched messages and emit alert message}
@@ -16,5 +16,5 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency "test-unit"
   gem.add_development_dependency "rake"
-  gem.add_runtime_dependency "fluentd"
+  gem.add_runtime_dependency "fluentd", "< 0.14.0"
 end
