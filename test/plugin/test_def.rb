@@ -1,12 +1,19 @@
 require 'helper'
+require 'fluent/test/helpers'
 
 class NotifierOutputDefinitionTest < Test::Unit::TestCase
-  TEST_DEFAULTS = {
-    tag: 'n', tag_warn: nil, tag_crit: nil,
-    interval_1st: 60, repetitions_1st: 5,
-    interval_2nd: 300, repetitions_2nd: 5,
-    interval_3rd: 1800
-  }
+  include Fluent::Test::Helpers
+
+  def setup
+    Fluent::Test.setup
+    @i = Fluent::Plugin::NotifierOutput.new
+    @i.configure(config_element())
+  end
+
+  def gen_conf(hash)
+    root = @i.configured_section_create(nil, config_element('root', '', {}, [config_element('def', '', hash)]))
+    root.def_configs.first
+  end
 
   TEST_CONF1 = {
     'tag' => 'notify',
@@ -24,7 +31,7 @@ class NotifierOutputDefinitionTest < Test::Unit::TestCase
   }
 
   def test_init
-    d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_CONF1, TEST_DEFAULTS)
+    d = Fluent::Plugin::NotifierOutput::Definition.new(gen_conf(TEST_CONF1), @i)
     assert_equal('name1', d.pattern)
     assert_equal(['field1','field2'], d.target_keys)
     assert_equal(:upward, d.instance_eval{ @check })
@@ -36,14 +43,14 @@ class NotifierOutputDefinitionTest < Test::Unit::TestCase
     assert_equal([60, 300, 1800], d.intervals)
     assert_equal([5, 5], d.repetitions)
 
-    d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_CONF2, TEST_DEFAULTS)
+    d = Fluent::Plugin::NotifierOutput::Definition.new(gen_conf(TEST_CONF2), @i)
     assert_equal('name2', d.pattern)
     assert_equal(/^field\d$/, d.target_key_pattern)
     assert_equal(/^$/, d.exclude_key_pattern)
     assert_equal(:find, d.instance_eval{ @check })
     assert_equal(/WARN/, d.warn_regexp)
     assert_equal(/CRIT/, d.crit_regexp)
-    assert_equal('n', d.tag)
+    assert_equal('notification', d.tag)
     assert_equal('warn', d.tag_warn)
     assert_equal('crit', d.tag_crit)
     assert_equal([5, 6, 7], d.intervals)
@@ -51,14 +58,14 @@ class NotifierOutputDefinitionTest < Test::Unit::TestCase
   end
 
   def test_match
-    d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_CONF1, TEST_DEFAULTS)
+    d = Fluent::Plugin::NotifierOutput::Definition.new(gen_conf(TEST_CONF1), @i)
     assert_equal(true, d.match?('field1'))
     assert_equal(true, d.match?('field2'))
     assert ! d.match?('field0')
     assert ! d.match?('field')
     assert ! d.match?('')
 
-    d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_CONF2, TEST_DEFAULTS)
+    d = Fluent::Plugin::NotifierOutput::Definition.new(gen_conf(TEST_CONF2), @i)
     assert_equal true, d.match?('field0')
     assert_equal true, d.match?('field1')
     assert_equal true, d.match?('field9')
@@ -67,7 +74,7 @@ class NotifierOutputDefinitionTest < Test::Unit::TestCase
     assert ! d.match?(' field0')
     assert ! d.match?('field0 ')
 
-    d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_CONF2.merge({'exclude_key_pattern' => '^field[7-9]$'}), TEST_DEFAULTS)
+    d = Fluent::Plugin::NotifierOutput::Definition.new(gen_conf(TEST_CONF2.merge({'exclude_key_pattern' => '^field[7-9]$'})), @i)
     assert_equal true, d.match?('field0')
     assert_equal true, d.match?('field1')
     assert ! d.match?('field7')
@@ -77,7 +84,7 @@ class NotifierOutputDefinitionTest < Test::Unit::TestCase
 
   def test_check_numeric
     t = Time.strptime('2012-07-19 14:40:30', '%Y-%m-%d %T')
-    d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_CONF1, TEST_DEFAULTS)
+    d = Fluent::Plugin::NotifierOutput::Definition.new(gen_conf(TEST_CONF1), @i)
     r = d.check('test.tag', t.to_i, {'field1' => '0.8', 'field2' => '1.5'}, 'field1')
     assert_nil r
 
@@ -110,7 +117,7 @@ class NotifierOutputDefinitionTest < Test::Unit::TestCase
 
   def test_check_string
     t = Time.strptime('2012-07-19 14:40:30', '%Y-%m-%d %T')
-    d = Fluent::Plugin::NotifierOutput::Definition.new(TEST_CONF2, TEST_DEFAULTS)
+    d = Fluent::Plugin::NotifierOutput::Definition.new(gen_conf(TEST_CONF2), @i)
     r = d.check('test.tag', t.to_i, {'field0' => 'hoge pos', 'field1' => 'CRIT fooooooo baaaaarrrrrrr'}, 'field0')
     assert_nil r
 

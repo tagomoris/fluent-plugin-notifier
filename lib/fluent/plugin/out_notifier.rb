@@ -14,69 +14,111 @@ class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
   config_param :default_tag_warn, :string, default: nil
   config_param :default_tag_crit, :string, default: nil
 
-  config_param :default_interval_1st, :time, default: 60
-  config_param :default_repetitions_1st, :integer, default: 5
-  config_param :default_interval_2nd, :time, default: 300
-  config_param :default_repetitions_2nd, :integer, default: 5
-  config_param :default_interval_3rd, :time, default: 1800
+  config_param :default_intervals, :array, value_type: :time, default: [60, 300, 1800]
+  config_param :default_repetitions, :array, value_type: :integer, default: [5, 5]
+
+  config_param :default_interval_1st, :time, default: nil
+  config_param :default_interval_2nd, :time, default: nil
+  config_param :default_interval_3rd, :time, default: nil
+  config_param :default_repetitions_1st, :integer, default: nil
+  config_param :default_repetitions_2nd, :integer, default: nil
 
   config_param :input_tag_remove_prefix, :string, default: nil
 
+  config_section :test, multi: true, param_name: :test_configs do
+    config_param :check, :enum, list: [:tag, :numeric, :regexp]
+    config_param :target_key, :string, default: nil
+    config_param :lower_threshold, :float, default: nil
+    config_param :upper_threshold, :float, default: nil
+    config_param :include_pattern, :string, default: nil
+    config_param :exclude_pattern, :string, default: nil
+  end
+
+  config_section :def, multi: true, param_name: :def_configs do
+    config_param :pattern, :string
+    config_param :check, :enum, list: [:numeric_upward, :numeric_downward, :string_find]
+
+    config_param :target_keys, :array, value_type: :string, default: nil
+    config_param :target_key_pattern, :string, default: nil
+    config_param :exclude_key_pattern, :string, default: '^$'
+
+    config_param :tag, :string, default: nil
+    config_param :tag_warn, :string, default: nil
+    config_param :tag_crit, :string, default: nil
+
+    # numeric_upward/downward
+    config_param :crit_threshold, :float, default: nil
+    config_param :warn_threshold, :float, default: nil
+
+    # string_find
+    config_param :crit_regexp, :string, default: nil
+    config_param :warn_regexp, :string, default: nil
+
+    # repeat & interval
+    config_param :intervals, :array, value_type: :time, default: nil
+    config_param :interval_1st, :time, default: nil
+    config_param :interval_2nd, :time, default: nil
+    config_param :interval_3rd, :time, default: nil
+    config_param :repetitions, :array, value_type: :integer, default: nil
+    config_param :repetitions_1st, :integer, default: nil
+    config_param :repetitions_2nd, :integer, default: nil
+  end
+
   attr_accessor :tests, :defs, :states, :match_cache, :negative_cache
 
-### output
-# {
-#  'pattern' => 'http_status_errors',
-#  'target_tag' => 'httpstatus.blog',
-#  'target_key' => 'blog_5xx_percentage',
-#  'check_type' => 'numeric_upward'
-#  'level' => 'warn',
-#  'threshold' => 25,  # or 'regexp' => ....,
-#  'value' => 49,      # or 'value' => 'matched some string...',
-#  'message_time' => Time.instance
-# }
+  ### output
+  # {
+  #  'pattern' => 'http_status_errors',
+  #  'target_tag' => 'httpstatus.blog',
+  #  'target_key' => 'blog_5xx_percentage',
+  #  'check_type' => 'numeric_upward'
+  #  'level' => 'warn',
+  #  'threshold' => 25,  # or 'regexp' => ....,
+  #  'value' => 49,      # or 'value' => 'matched some string...',
+  #  'message_time' => Time.instance
+  # }
 
-# <match httpstatus.blog>
-#   type notifier
-#   default_tag notification
-#   default_interval_1st 1m
-#   default_repetitions_1st 5
-#   default_interval_2nd 5m
-#   default_repetitions_2nd 5
-#   default_interval_3rd 30m
-#   <test>
-#     check numeric
-#     target_key xxx
-#     lower_threshold xxx
-#     upper_threshold xxx
-#   </test>
-#   <test>
-#     check regexp
-#     target_key xxx
-#     include_pattern ^.$
-#     exclude_pattern ^.$
-#   </test>
-#   <def>
-#     pattern http_status_errors
-#     check numeric_upward
-#     warn_threshold 25
-#     crit_threshold 50
-#     tag alert
-# #    tag_warn alert.warn
-# #    tag_crit alert.crit
-#     # target_keys blog_5xx_percentage
-#     target_key_pattern ^.*_5xx_percentage$
-#   </def>
-#   <def>
-#     pattern log_checker
-#     check string_find
-#     crit_pattern 'ERROR'
-#     warn_pattern 'WARNING'
-#     tag alert
-#     # target_keys message
-#     target_key_pattern ^.*_message$
-#   </def>
-# </match>
+  # <match httpstatus.blog>
+  #   type notifier
+  #   default_tag notification
+  #   default_interval_1st 1m
+  #   default_repetitions_1st 5
+  #   default_interval_2nd 5m
+  #   default_repetitions_2nd 5
+  #   default_interval_3rd 30m
+  #   <test>
+  #     check numeric
+  #     target_key xxx
+  #     lower_threshold xxx
+  #     upper_threshold xxx
+  #   </test>
+  #   <test>
+  #     check regexp
+  #     target_key xxx
+  #     include_pattern ^.$
+  #     exclude_pattern ^.$
+  #   </test>
+  #   <def>
+  #     pattern http_status_errors
+  #     check numeric_upward
+  #     warn_threshold 25
+  #     crit_threshold 50
+  #     tag alert
+  # #    tag_warn alert.warn
+  # #    tag_crit alert.crit
+  #     # target_keys blog_5xx_percentage
+  #     target_key_pattern ^.*_5xx_percentage$
+  #   </def>
+  #   <def>
+  #     pattern log_checker
+  #     check string_find
+  #     crit_pattern 'ERROR'
+  #     warn_pattern 'WARNING'
+  #     tag alert
+  #     # target_keys message
+  #     target_key_pattern ^.*_message$
+  #   </def>
+  # </match>
 
   def configure(conf)
     super
@@ -92,22 +134,25 @@ class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
       @input_tag_remove_prefix_length = @input_tag_remove_prefix_string.length
     end
 
-    defaults = {
-      tag: @default_tag, tag_warn: @default_tag_warn, tag_crit: @default_tag_crit,
-      interval_1st: @default_interval_1st, repetitions_1st: @default_repetitions_1st,
-      interval_2nd: @default_interval_2nd, repetitions_2nd: @default_repetitions_2nd,
-      interval_3rd: @default_interval_3rd,
-    }
+    if @default_interval_1st || @default_interval_2nd || @default_interval_3rd
+      @default_intervals = [
+        @default_interval_1st || @default_intervals[0],
+        @default_interval_2nd || @default_intervals[1],
+        @default_interval_3rd || @default_intervals[2],
+      ]
+    end
+    if @default_repetitions_1st || @default_repetitions_2nd
+      @default_repetitions = [
+        @default_repetitions_1st || @default_repetitions[0],
+        @default_repetitions_2nd || @default_repetitions[1],
+      ]
+    end
 
-    conf.elements.each do |element|
-      case element.name
-      when 'test'
-        @tests.push(Test.new(element))
-      when 'def'
-        @defs.push(Definition.new(element, defaults))
-      else
-        raise Fluent::ConfigError, "invalid section name for out_notifier: #{element.name}"
-      end
+    @test_configs.each do |test_config|
+      @tests << Test.new(test_config)
+    end
+    @def_configs.each do |def_config|
+      @defs << Definition.new(def_config, self)
     end
   end
 
@@ -117,10 +162,8 @@ class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
     @last_status_cleaned = Fluent::Engine.now
   end
 
-  # def shutdown
-  # end
-
   def suppressed_emit(notifications)
+    now = Fluent::Engine.now
     notifications.each do |n|
       hashkey = n.delete(:hashkey)
       definition = n.delete(:match_def)
@@ -129,11 +172,11 @@ class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
       state = @states[hashkey]
       if state
         unless state.suppress?(definition, n)
-          router.emit(tag, Fluent::Engine.now, n)
+          router.emit(tag, now, n)
           state.update_notified(definition, n)
         end
       else
-        router.emit(tag, Fluent::Engine.now, n)
+        router.emit(tag, now, n)
         @states[hashkey] = State.new(n)
       end
     end
@@ -207,46 +250,32 @@ class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
     attr_accessor :lower_threshold, :upper_threshold
     attr_accessor :include_pattern, :exclude_pattern
 
-    def initialize(element)
-      @target_key = nil
-      element.keys.each do |k|
-        v = element[k]
-        case k
-        when 'check'
-          case v
-          when 'tag'
-            @check = :tag
-            @include_pattern = element['include_pattern'] ? Regexp.compile(element['include_pattern']) : nil
-            @exclude_pattern = element['exclude_pattern'] ? Regexp.compile(element['exclude_pattern']) : nil
-            if @include_pattern.nil? and @exclude_pattern.nil?
-              raise Fluent::ConfigError, "At least one of include_pattern or exclude_pattern must be specified for 'check tag'"
-            end
-          when 'numeric'
-            @check = :numeric
-            @lower_threshold = element['lower_threshold'] ? element['lower_threshold'].to_f : nil
-            @upper_threshold = element['upper_threshold'] ? element['upper_threshold'].to_f : nil
-            if @lower_threshold.nil? and @upper_threshold.nil?
-              raise Fluent::ConfigError, "At least one of lower_threshold or upper_threshold must be specified for 'check numeric'"
-            end
-          when 'regexp'
-            @check = :regexp
-            @include_pattern = element['include_pattern'] ? Regexp.compile(element['include_pattern']) : nil
-            @exclude_pattern = element['exclude_pattern'] ? Regexp.compile(element['exclude_pattern']) : nil
-            if @include_pattern.nil? and @exclude_pattern.nil?
-              raise Fluent::ConfigError, "At least one of include_pattern or exclude_pattern must be specified for 'check regexp'"
-            end
-          else
-            raise Fluent::ConfigError, "invalid check value of test [numeric/regexp]: '#{v}'"
-          end
-        when 'target_key'
-          @target_key = v
+    def initialize(section)
+      @check = section.check
+      @target_key = section.target_key
+      case @check
+      when :tag
+        if !section.include_pattern && !section.exclude_pattern
+          raise Fluent::ConfigError, "At least one of include_pattern or exclude_pattern must be specified for 'check tag'"
         end
-      end
-      unless @check
-        raise Fluent::ConfigError, "'check' missing in <test> section"
-      end
-      if @target_key.nil? and @check != :tag
-        raise Fluent::ConfigError, "'target_key' missing in <test> section"
+        @include_pattern = section.include_pattern ? Regexp.compile(section.include_pattern) : nil
+        @exclude_pattern = section.exclude_pattern ? Regexp.compile(section.exclude_pattern) : nil
+      when :numeric
+        if !section.lower_threshold && !section.upper_threshold
+          raise Fluent::ConfigError, "At least one of lower_threshold or upper_threshold must be specified for 'check numeric'"
+        end
+        raise Fluent::ConfigError, "'target_key' is needed for 'check numeric'" unless @target_key
+        @lower_threshold = section.lower_threshold
+        @upper_threshold = section.upper_threshold
+      when :regexp
+        if !section.include_pattern && !section.exclude_pattern
+          raise Fluent::ConfigError, "At least one of include_pattern or exclude_pattern must be specified for 'check regexp'"
+        end
+        raise Fluent::ConfigError, "'target_key' is needed for 'check regexp'" unless @target_key
+        @include_pattern = section.include_pattern ? Regexp.compile(section.include_pattern) : nil
+        @exclude_pattern = section.exclude_pattern ? Regexp.compile(section.exclude_pattern) : nil
+      else
+        raise "BUG: unknown check: #{@check}"
       end
     end
 
@@ -277,63 +306,60 @@ class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
     attr_accessor :crit_threshold, :warn_threshold # for 'numeric_upward', 'numeric_downward'
     attr_accessor :crit_regexp, :warn_regexp # for 'string_find'
 
-    def initialize(element, defaults)
-      @target_keys = nil
-      element.keys.each do |k|
-        case k
-        when 'pattern'
-          @pattern = element[k]
-        when 'check'
-          case element[k]
-          when 'numeric_upward'
-            @check = :upward
-            unless element.has_key?('crit_threshold') and element.has_key?('warn_threshold')
-              raise Fluent::ConfigError, "Both of crit_threshold and warn_threshold must be specified for 'check numeric_upward'"
-            end
-            @crit_threshold = element['crit_threshold'].to_f
-            @warn_threshold = element['warn_threshold'].to_f
-          when 'numeric_downward'
-            @check = :downward
-            unless element.has_key?('crit_threshold') and element.has_key?('warn_threshold')
-              raise Fluent::ConfigError, "Both of crit_threshold and warn_threshold must be specified for 'check_numeric_downward'"
-            end
-            @crit_threshold = element['crit_threshold'].to_f
-            @warn_threshold = element['warn_threshold'].to_f
-          when 'string_find'
-            @check = :find
-            unless element.has_key?('crit_regexp') and element.has_key?('warn_regexp')
-              raise Fluent::ConfigError, "Both of crit_regexp and warn_regexp must be specified for 'check string_find'"
-            end
-            @crit_regexp = Regexp.compile(element['crit_regexp'].to_s)
-            @warn_regexp = Regexp.compile(element['warn_regexp'].to_s)
-          else
-            raise Fluent::ConfigError, "invalid check type: #{element[k]}"
-          end
-        when 'target_keys'
-          @target_keys = element['target_keys'].split(',')
-        when 'target_key_pattern'
-          @target_key_pattern = Regexp.compile(element['target_key_pattern'])
-          @exclude_key_pattern = Regexp.compile(element['exclude_key_pattern'] || '^$')
+    def initialize(section, plugin)
+      @pattern = section.pattern
+
+      @tag = section.tag || plugin.default_tag
+      @tag_warn = section.tag_warn || plugin.default_tag_warn
+      @tag_crit = section.tag_crit || plugin.default_tag_crit
+
+      @target_keys = section.target_keys
+      @target_key_pattern = section.target_key_pattern ? Regexp.compile(section.target_key_pattern) : nil
+      @exclude_key_pattern = section.exclude_key_pattern ? Regexp.compile(section.exclude_key_pattern) : nil
+      if !@target_keys and !@target_key_pattern
+        raise Fluent::ConfigError, "out_notifier needs one of target_keys or target_key_pattern in <def>"
+      end
+
+      case section.check
+      when :numeric_upward
+        @check = :upward
+        if !section.crit_threshold || !section.warn_threshold
+          raise Fluent::ConfigError, "Both of crit_threshold and warn_threshold must be specified for 'check numeric_upward'"
         end
+        @crit_threshold = section.crit_threshold
+        @warn_threshold = section.warn_threshold
+      when :numeric_downward
+        @check = :downward
+        if !section.crit_threshold || !section.warn_threshold
+          raise Fluent::ConfigError, "Both of crit_threshold and warn_threshold must be specified for 'check numeric_downward'"
+        end
+        @crit_threshold = section.crit_threshold
+        @warn_threshold = section.warn_threshold
+      when :string_find
+        @check = :find
+        if !section.crit_regexp || !section.warn_regexp
+          raise Fluent::ConfigError, "Both of crit_regexp and warn_regexp must be specified for 'check string_find'"
+        end
+        @crit_regexp = Regexp.compile(section.crit_regexp)
+        @warn_regexp = Regexp.compile(section.warn_regexp)
+      else
+        raise "BUG: unknown check: #{section.check}"
       end
-      if @pattern.nil? or @pattern.length < 1
-        raise Fluent::ConfigError, "pattern must be set"
-      end
-      if @target_keys.nil? and @target_key_pattern.nil?
-        raise Fluent::ConfigError, "out_notifier needs one of target_keys or target_key_pattern"
-      end
-      @tag = element['tag'] || defaults[:tag]
-      @tag_warn = element['tag_warn'] || defaults[:tag_warn]
-      @tag_crit = element['tag_crit'] || defaults[:tag_crit]
-      @intervals = [
-                    (element['interval_1st'] || defaults[:interval_1st]).to_f,
-                    (element['interval_2nd'] || defaults[:interval_2nd]).to_f,
-                    (element['interval_3rd'] || defaults[:interval_3rd]).to_f
-                   ]
-      @repetitions = [
-                      (element['repetitions_1st'] || defaults[:repetitions_1st]).to_f,
-                      (element['repetitions_2nd'] || defaults[:repetitions_2nd]).to_f
-                     ]
+
+      @intervals = if section.intervals
+                     section.intervals
+                   elsif section.interval_1st || section.interval_2nd || section.interval_3rd
+                     [section.interval_1st || plugin.default_intervals[0], section.interval_2nd || plugin.default_intervals[1], section.interval_3rd || plugin.default_intervals[2]]
+                   else
+                     plugin.default_intervals
+                   end
+      @repetitions = if section.repetitions
+                       section.repetitions
+                     elsif section.repetitions_1st || section.repetitions_2nd
+                       [section.repetitions_1st || plugin.default_repetitions[0], section.repetitions_2nd || plugin.default_repetitions[1]]
+                     else
+                       plugin.default_repetitions
+                     end
     end
 
     def match?(key)
@@ -344,16 +370,16 @@ class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
       end
     end
 
-# {
-#  'pattern' => 'http_status_errors',
-#  'target_tag' => 'httpstatus.blog',
-#  'target_key' => 'blog_5xx_percentage',
-#  'check_type' => 'numeric_upward'
-#  'level' => 'warn', # 'regexp' => '[WARN] .* MUST BE CHECKED!$'
-#  'threshold' => 25,
-#  'value' => 49, # 'value' => '2012/05/15 18:01:59 [WARN] wooooops, MUST BE CHECKED!'
-#  'message_time' => Time.instance
-# }
+    # {
+    #  'pattern' => 'http_status_errors',
+    #  'target_tag' => 'httpstatus.blog',
+    #  'target_key' => 'blog_5xx_percentage',
+    #  'check_type' => 'numeric_upward'
+    #  'level' => 'warn', # 'regexp' => '[WARN] .* MUST BE CHECKED!$'
+    #  'threshold' => 25,
+    #  'value' => 49, # 'value' => '2012/05/15 18:01:59 [WARN] wooooops, MUST BE CHECKED!'
+    #  'message_time' => Time.instance
+    # }
     def check(tag, time, record, key)
       case @check
       when :upward
