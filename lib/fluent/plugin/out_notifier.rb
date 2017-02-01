@@ -1,26 +1,22 @@
-require "fluent/plugin/output"
-
-class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
+class Fluent::NotifierOutput < Fluent::Output
   Fluent::Plugin.register_output('notifier', self)
-
-  helpers :event_emitter
 
   NOTIFICATION_LEVELS = ['OK', 'WARN', 'CRIT', 'LOST'].freeze
 
   STATES_CLEAN_INTERVAL = 3600 # 1hours
   STATES_EXPIRE_SECONDS = 14400 # 4hours
 
-  config_param :default_tag, :string, default: 'notification'
-  config_param :default_tag_warn, :string, default: nil
-  config_param :default_tag_crit, :string, default: nil
+  config_param :default_tag, :string, :default => 'notification'
+  config_param :default_tag_warn, :string, :default => nil
+  config_param :default_tag_crit, :string, :default => nil
 
-  config_param :default_interval_1st, :time, default: 60
-  config_param :default_repetitions_1st, :integer, default: 5
-  config_param :default_interval_2nd, :time, default: 300
-  config_param :default_repetitions_2nd, :integer, default: 5
-  config_param :default_interval_3rd, :time, default: 1800
+  config_param :default_interval_1st, :time, :default => 60
+  config_param :default_repetitions_1st, :integer, :default => 5
+  config_param :default_interval_2nd, :time, :default => 300
+  config_param :default_repetitions_2nd, :integer, :default => 5
+  config_param :default_interval_3rd, :time, :default => 1800
 
-  config_param :input_tag_remove_prefix, :string, default: nil
+  config_param :input_tag_remove_prefix, :string, :default => nil
 
   attr_accessor :tests, :defs, :states, :match_cache, :negative_cache
 
@@ -78,6 +74,16 @@ class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
 #   </def>
 # </match>
 
+  # Define `log` method for v0.10.42 or earlier
+  unless method_defined?(:log)
+    define_method("log") { $log }
+  end
+
+  # Define `log` method for v0.10.57 or earlier
+  unless method_defined?(:router)
+    define_method(:router) { Fluent::Engine }
+  end
+
   def configure(conf)
     super
 
@@ -93,10 +99,10 @@ class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
     end
 
     defaults = {
-      tag: @default_tag, tag_warn: @default_tag_warn, tag_crit: @default_tag_crit,
-      interval_1st: @default_interval_1st, repetitions_1st: @default_repetitions_1st,
-      interval_2nd: @default_interval_2nd, repetitions_2nd: @default_repetitions_2nd,
-      interval_3rd: @default_interval_3rd,
+      :tag => @default_tag, :tag_warn => @default_tag_warn, :tag_crit => @default_tag_crit,
+      :interval_1st => @default_interval_1st, :repetitions_1st => @default_repetitions_1st,
+      :interval_2nd => @default_interval_2nd, :repetitions_2nd => @default_repetitions_2nd,
+      :interval_3rd => @default_interval_3rd,
     }
 
     conf.elements.each do |element|
@@ -185,7 +191,7 @@ class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
     notifications
   end
 
-  def process(tag, es)
+  def emit(tag, es, chain)
     notifications = check(tag, es)
 
     if notifications.size > 0
@@ -200,6 +206,8 @@ class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
         @last_status_cleaned = Fluent::Engine.now
       end
     end
+
+    chain.next
   end
 
   class Test
@@ -208,7 +216,6 @@ class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
     attr_accessor :include_pattern, :exclude_pattern
 
     def initialize(element)
-      @target_key = nil
       element.keys.each do |k|
         v = element[k]
         case k
@@ -273,12 +280,11 @@ class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
   class Definition
     attr_accessor :tag, :tag_warn, :tag_crit
     attr_accessor :intervals, :repetitions
-    attr_accessor :pattern, :target_keys, :target_key_pattern, :exclude_key_pattern
+    attr_accessor :pattern, :check, :target_keys, :target_key_pattern, :exclude_key_pattern
     attr_accessor :crit_threshold, :warn_threshold # for 'numeric_upward', 'numeric_downward'
     attr_accessor :crit_regexp, :warn_regexp # for 'string_find'
 
     def initialize(element, defaults)
-      @target_keys = nil
       element.keys.each do |k|
         case k
         when 'pattern'
