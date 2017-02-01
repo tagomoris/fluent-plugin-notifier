@@ -156,6 +156,10 @@ class Fluent::Plugin::NotifierOutput < Fluent::Plugin::Output
     end
   end
 
+  def multi_workers_ready?
+    true
+  end
+
   def start
     super
     @mutex = Mutex.new
