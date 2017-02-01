@@ -1,9 +1,5 @@
 # fluent-plugin-notifier
 
-## Component
-
-### NotifierOutput
-
 [Fluentd](http://fluentd.org) plugin to emit notifications for messages, with numbers over/under threshold, or specified pattern strings.
 
 ## Configuration
@@ -12,6 +8,7 @@ To notify apache logs with over 1000000 (microseconds) duration for CRITICAL , o
 
     <match apache.log.**>
       @type notifier
+      @label @notification_events
       <def>
         pattern apache_duration
         check numeric_upward
@@ -29,7 +26,7 @@ To notify apache logs with over 1000000 (microseconds) duration for CRITICAL , o
       </def>
     </match>
 
-With this configuration, you will get notification message like this:
+With this configuration, you will get notification messages in `<label @notification_events>` section, like this:
 
     2012-05-15 19:44:29 +0900 notification: {"pattern":"apache_duration","target_tag":"apache.log.xxx","target_key":"duration","check_type":"numeric_upward","level":"crit","threshold":1000000,"value":"1057231","message_time":"2012-05-15 19:44:27 +0900"}
     2012-05-15 19:44:29 +0900 notification: {"pattern":"status_500","target_tag":"apache.log.xxx","target_key":"status","check_type":"string_find","level":"crit","regexp":"/500/","value":"500","message_time":"2012-05-15 19:44:27 +0900"}
@@ -56,6 +53,7 @@ To include specified messages into check target, or to exclude specified message
 
     <match apache.log.**>
       @type notifier
+      @label @notifications
       <test>
         check numeric
         target_key duration     # microseconds
@@ -70,6 +68,12 @@ To include specified messages into check target, or to exclude specified message
         target_key_pattern ^status.*$
       </def>
     </match>
+    
+    <label @notifications>
+      <match **>
+        # send notifications to Slack, email or ...
+      </match>
+    </label>
 
 With configuration above, fluent-plugin-notifier checks messages with specified duration value (d: 5000 <= d <= 5000000), and others are ignored.
 
@@ -85,6 +89,7 @@ Multiple <test> directives means logical AND of each tests.
 
     <match apache.log.**>
       @type notifier
+      @label @notifications
       input_tag_remove_prefix apache.log
       <test>
         check tag
