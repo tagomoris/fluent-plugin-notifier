@@ -11,7 +11,7 @@
 To notify apache logs with over 1000000 (microseconds) duration for CRITICAL , or status '500' by string pattern match:
 
     <match apache.log.**>
-      type notifier
+      @type notifier
       <def>
         pattern apache_duration
         check numeric_upward
@@ -55,7 +55,7 @@ If you want to get every 5 minutes notifications (after 1 minutes notifications)
 To include specified messages into check target, or to exclude specified messages from check target, <test> directive is useful.
 
     <match apache.log.**>
-      type notifier
+      @type notifier
       <test>
         check numeric
         target_key duration     # microseconds
@@ -84,7 +84,7 @@ Available 'check' types are: 'numeric', 'regexp' and 'tag'.
 Multiple <test> directives means logical AND of each tests.
 
     <match apache.log.**>
-      type notifier
+      @type notifier
       input_tag_remove_prefix apache.log
       <test>
         check tag
