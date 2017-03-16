@@ -2,6 +2,13 @@
 
 [Fluentd](http://fluentd.org) plugin to emit notifications for messages, with numbers over/under threshold, or specified pattern strings.
 
+## Requirements
+
+| fluent-plugin-notifier | fluentd    | ruby   |
+|------------------------|------------|--------|
+| >= 1.0.0               | >= v0.14.0 | >= 2.1 |
+| <  1.0.0               | <  v0.14.0 | >= 1.9 |
+
 ## Configuration
 
 To notify apache logs with over 1000000 (microseconds) duration for CRITICAL , or status '500' by string pattern match:
